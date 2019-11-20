@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Leaflet Map</title>
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css" />
+	<link rel="stylesheet" href="css/style.css"/>
+	<style>
+
+		html { height:100%;}
+    body {
+        height:100%;
+        padding: 0;
+        margin: 0;
+    }
+
+    #map {
+        width: 100%;
+        margin: 0 auto;
+        height: 100%;
+    }
+
+    info {
+    z-index: 1000;
+    position: absolute;
+    right: 40%;
+    top: 5%;
+    padding: 6px 8px;
+    font: 14px Arial, Helvetica, sans-serif;
+    text-align: center;
+    background: black;
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    border-radius: 20px;
+}
+
+.info h1 {
+    font-size: 30px;
+    margin: 0 0 5px;
+    color: #e30000;
+}
+
+
+.legend {
+    line-height: 30px;
+    color: #e30000;
+    font-family: 'Open Sans', Helvetica, sans-serif;
+    padding: 30px 30px;
+    background: black;
+    background: rgba(255,255,255,0.8);
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    border-radius: 30px;
+}
+
+.legend i {
+    width: 45px;
+    height: 40px;
+    float: left; 
+    margin-right: 8px;
+    opacity: 0.7;
+}
+
+
+.legend p {
+    font-size: 12px;
+    line-height: 40px;
+    margin: 0;
+}
+
+		
+	</style>
+</head>
+<body>
+	<!-- Our web map and content will go here -->	
+	<div class='info'><h1>Blood Lead distribution in Philadelphia</h1></div>
+	
+	<div id="map"></div>
+	
+	<script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+		
+	<script>
+
+		var grayscale = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap' });		
+		var Esri_WorldImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+	attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+});
+
+		var baseLayers = {
+			"Grayscale": grayscale,
+			"Satellite": Esri_WorldImagery
+		};
+
+		// create two layers of blood lead and septa stations
+		var overlayers_blood_lead = L.layerGroup();
+		var overlayers_septa_stations = L.layerGroup();
+
+		// Add census tract of blood lead in Philadelphia GeoJSON Data
+		
+
+
+		var neighborhoodsLayer = null;
+$.getJSON("data/blood_lead.geojson",function(data){
+    neighborhoodsLayer = L.geoJson(data, {
+        style: styleFunc,
+        onEachFeature: function(feature, layer){
+            layer.bindPopup('Blood lead level: '+feature.properties.num_bll_5p);
+        }
+    }).addTo(map);
+});
+
+
+
+		// add the septa station as new layers
+		L.marker([40.080842, -75.208011]).bindPopup('Chestnut Hill East').addTo(overlayers_septa_stations);
+		L.marker([40.065178, -75.191317]).bindPopup('Mount Airy').addTo(overlayers_septa_stations);
+		L.marker([40.037813, -75.172262]).bindPopup('Germantown').addTo(overlayers_septa_stations);
+		L.marker([39.981638, -75.149732]).bindPopup('Temple University').addTo(overlayers_septa_stations);
+
+		// combine the geojson layer and septa station as the overlays
+		var overlays = {
+			"Blood lead level": overlayers_blood_lead,
+			"Septa stations": overlayers_septa_stations
+		};
+
+    	// Create Map Object
+    	var map = L.map('map',{ 
+    		center: [40.003926, -75.135201], 
+    		zoom: 11,
+    		layers: [grayscale, overlayers_blood_lead]
+    	});
+
+		// Set style function that sets fill color property equal to blood lead
+
+
+		function styleFunc(feature) {
+    return {
+        fillColor: setColorFunc(feature.properties.num_bll_5p),
+        fillOpacity: 0.9,
+        weight: 1,
+        opacity: 1,
+        color: '#e30000',
+        dashArray: '3'
+    };
+}
+
+function setColorFunc(density){
+    return density > 50 ? '#c9ff00' :
+           density > 25 ? '#49ff00' :
+           density > 10 ? '#00ffec' :
+           density > 0 ? '#FFF8DC' :
+                         '#110022';
+};
+		// set the highlight of polygon
+		var highlight = {
+			'fillColor': 'yellow',
+			'weight': 5,
+			'opacity': 1
+		};
+
+		// Now we’ll use the onEachFeature option to add the listeners on our state layers:
+		function onEachFeatureFunc(feature, layer){
+    layer.on({
+        mouseover: highlightFeature,
+        mouseout: resetHighlight,
+        click: zoomFeature
+    });
+    layer.bindPopup('Blood lead level: '+feature.properties.num_bll_5p);
+}
+		
+		// Now let’s make the states highlighted visually in some way when they are hovered with a mouse. First we’ll define an event listener for layer mouseover event:
+		function highlightFeature(e){
+    var layer = e.target;
+
+    layer.setStyle({
+        weight: 5,
+        color: '#666',
+        dashArray: '',
+        fillOpacity: 0.7
+    });
+    // for different web browsers
+    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+        layer.bringToFront();
+    }
+}
+
+// Define what happens on mouseout:
+function resetHighlight(e) {
+    neighborhoodsLayer.resetStyle(e.target);
+}  
+		
+		// Define what happens on mouseout:
+		function resetHighlight(e) {
+			neighborhoodsLayer.setStyle({
+		        fillOpacity: 0.9,
+		        weight: 1,
+		        opacity: 1,
+		        color: '#110022',
+		        dashArray: '3'
+			});
+			// neighborhoodsLayer.resetStyle(e.target);
+		}
+		
+		// As an additional touch, let’s define a click listener that zooms to the state: 
+		function zoomFeature(e){
+    console.log(e.target.getBounds());
+    map.fitBounds(e.target.getBounds().pad(1.5));
+}
+
+
+			// var layer = e.target;
+			//neighborhoodsLayer.setStyle(styleFunc); //resets layer colors
+           // layer.setStyle(highlight);  //highlights selected.
+
+			//map.fitBounds(e.target.getBounds().pad(1.5));
+		//}
+		
+		
+		// Add Legend to Map
+		var legend = L.control({position: 'bottomleft'});
+
+// Function that runs when legend is added to map
+legend.onAdd = function (map) {
+    // Create Div Element and Populate it with HTML
+    var div = L.DomUtil.create('div', 'legend');            
+    div.innerHTML += '<b>Blood lead level</b><br />';
+    div.innerHTML += 'by census tract<br />';
+    div.innerHTML += '<br>';
+    div.innerHTML += '<i style="background: #c9ff00"></i><p>15+</p>';
+    div.innerHTML += '<i style="background: #49ff00"></i><p>10-15</p>';
+    div.innerHTML += '<i style="background: #00ffec"></i><p>5-10</p>';
+    div.innerHTML += '<i style="background: #FFF8DC"></i><p>0-5</p>';
+    div.innerHTML += '<hr>';
+    div.innerHTML += '<i style="background: #110022"></i><p>No_Data</p>';
+    
+    // Return the Legend div containing the HTML content
+    return div;
+};
+
+// Add Legend to Map
+legend.addTo(map);
+		
+		// Add Scale Bar to Map
+		L.control.scale({position: 'bottomleft'}).addTo(map);
+		L.control.layers(baseLayers, overlays).addTo(map);
+
+	</script>
+</body>
+</html>
