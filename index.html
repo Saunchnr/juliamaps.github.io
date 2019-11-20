@@ -1,10 +1,70 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Leaflet Map</title>
+	<title>Julia Map</title>
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css" />
 	<link rel="stylesheet" href="css/style.css"/>
 	<style>
+
+		html { height:100%;}
+    body {
+        height:100%;
+        padding: 0;
+        margin: 0;
+    }
+
+    #map {
+        width: 100%;
+        margin: 0 auto;
+        height: 100%;
+    }
+
+    info {
+    z-index: 1000;
+    position: absolute;
+    right: 40%;
+    top: 5%;
+    padding: 6px 8px;
+    font: 14px Arial, Helvetica, sans-serif;
+    text-align: center;
+    background: black;
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    border-radius: 20px;
+}
+
+.info h1 {
+    font-size: 30px;
+    margin: 0 0 5px;
+    color: #e30000;
+}
+
+
+.legend {
+    line-height: 30px;
+    color: #e30000;
+    font-family: 'Open Sans', Helvetica, sans-serif;
+    padding: 30px 30px;
+    background: black;
+    background: rgba(255,255,255,0.8);
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    border-radius: 30px;
+}
+
+.legend i {
+    width: 45px;
+    height: 40px;
+    float: left; 
+    margin-right: 8px;
+    opacity: 0.7;
+}
+
+
+.legend p {
+    font-size: 12px;
+    line-height: 40px;
+    margin: 0;
+}
 
 		
 	</style>
@@ -35,13 +95,19 @@
 		var overlayers_septa_stations = L.layerGroup();
 
 		// Add census tract of blood lead in Philadelphia GeoJSON Data
+		
+
+
 		var neighborhoodsLayer = null;
-		$.getJSON("data/blood_lead.geojson",function(data){
-		    neighborhoodsLayer = L.geoJson(data, {
-		    	style: styleFunc,
-		    	onEachFeature: onEachFeature
-		    }).addTo(overlayers_blood_lead);
-		});
+$.getJSON("data/blood_lead.geojson",function(data){
+    neighborhoodsLayer = L.geoJson(data, {
+        style: styleFunc,
+        onEachFeature: function(feature, layer){
+            layer.bindPopup('Blood lead level: '+feature.properties.num_bll_5p);
+        }
+    }).addTo(map);
+});
+
 
 
 		// add the septa station as new layers
@@ -64,26 +130,26 @@
     	});
 
 		// Set style function that sets fill color property equal to blood lead
+
+
 		function styleFunc(feature) {
-		    return {
-		        fillColor: setColorFunc(feature.properties.perc_5plus),
-		        fillOpacity: 0.9,
-		        weight: 1,
-		        opacity: 1,
-		        color: '#ffffff',
-		        dashArray: '3'
-		    };
-		}
+    return {
+        fillColor: setColorFunc(feature.properties.num_bll_5p),
+        fillOpacity: 0.9,
+        weight: 1,
+        opacity: 1,
+        color: '#e30000',
+        dashArray: '3'
+    };
+}
 
-		// Set function for color ramp
-		function setColorFunc(density){
-			return density > 15 ? '#800000' :
-			       density > 10 ? '#A0522D' :
-			       density > 5 ? '#DAA520' :
-			       density > 0 ? '#FFF8DC' :
-			                     '#BFBCBB';
-		};
-
+function setColorFunc(density){
+    return density > 50 ? '#c9ff00' :
+           density > 25 ? '#49ff00' :
+           density > 10 ? '#00ffec' :
+           density > 0 ? '#FFF8DC' :
+                         '#110022';
+};
 		// set the highlight of polygon
 		var highlight = {
 			'fillColor': 'yellow',
@@ -92,31 +158,35 @@
 		};
 
 		// Now we’ll use the onEachFeature option to add the listeners on our state layers:
-		function onEachFeature(feature, layer){
-			layer.on({
-				mouseover: highlightFeature,
-				mouseout: resetHighlight,
-				click: zoomFeature
-			});
-		}
+		function onEachFeatureFunc(feature, layer){
+    layer.on({
+        mouseover: highlightFeature,
+        mouseout: resetHighlight,
+        click: zoomFeature
+    });
+    layer.bindPopup('Blood lead level: '+feature.properties.num_bll_5p);
+}
 		
 		// Now let’s make the states highlighted visually in some way when they are hovered with a mouse. First we’ll define an event listener for layer mouseover event:
 		function highlightFeature(e){
-			var layer = e.target;
+    var layer = e.target;
 
-			layer.setStyle({
-				weight: 5,
-				color: '#666',
-				dashArray: '',
-				fillOpacity: 0.7
-			});
+    layer.setStyle({
+        weight: 5,
+        color: '#666',
+        dashArray: '',
+        fillOpacity: 0.7
+    });
+    // for different web browsers
+    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+        layer.bringToFront();
+    }
+}
 
-			// for different web browsers
-			if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
-		        layer.bringToFront();
-		    }
-		}
-		
+// Define what happens on mouseout:
+function resetHighlight(e) {
+    neighborhoodsLayer.resetStyle(e.target);
+}  
 		
 		// Define what happens on mouseout:
 		function resetHighlight(e) {
@@ -124,7 +194,7 @@
 		        fillOpacity: 0.9,
 		        weight: 1,
 		        opacity: 1,
-		        color: '#ffffff',
+		        color: '#110022',
 		        dashArray: '3'
 			});
 			// neighborhoodsLayer.resetStyle(e.target);
@@ -132,37 +202,42 @@
 		
 		// As an additional touch, let’s define a click listener that zooms to the state: 
 		function zoomFeature(e){
-			// console.log(e.target.getBounds());
-			var layer = e.target;
-			neighborhoodsLayer.setStyle(styleFunc); //resets layer colors
-            layer.setStyle(highlight);  //highlights selected.
+    console.log(e.target.getBounds());
+    map.fitBounds(e.target.getBounds().pad(1.5));
+}
 
-			map.fitBounds(e.target.getBounds().pad(1.5));
-		}
+
+			// var layer = e.target;
+			//neighborhoodsLayer.setStyle(styleFunc); //resets layer colors
+           // layer.setStyle(highlight);  //highlights selected.
+
+			//map.fitBounds(e.target.getBounds().pad(1.5));
+		//}
 		
-		// Create Leaflet Control Object for Legend
-		var legend = L.control({position: 'bottomright'});
-		
-		// Function that runs when legend is added to map
-		legend.onAdd = function (map) {
-			// Create Div Element and Populate it with HTML
-			var div = L.DomUtil.create('div', 'legend');		    
-			div.innerHTML += '<b>Blood lead level</b><br />';
-			div.innerHTML += 'by census tract<br />';
-			div.innerHTML += '<br>';
-			div.innerHTML += '<i style="background: #800000"></i><p>15+</p>';
-			div.innerHTML += '<i style="background: #A0522D"></i><p>10-15</p>';
-			div.innerHTML += '<i style="background: #DAA520"></i><p>5-10</p>';
-			div.innerHTML += '<i style="background: #DEB887"></i><p>0-5</p>';
-			div.innerHTML += '<hr>';
-			div.innerHTML += '<i style="background: #BFBCBB"></i><p>No Data</p>';
-			
-			// Return the Legend div containing the HTML content
-			return div;
-		};
 		
 		// Add Legend to Map
-		legend.addTo(map);
+		var legend = L.control({position: 'bottomleft'});
+
+// Function that runs when legend is added to map
+legend.onAdd = function (map) {
+    // Create Div Element and Populate it with HTML
+    var div = L.DomUtil.create('div', 'legend');            
+    div.innerHTML += '<b>Blood lead level</b><br />';
+    div.innerHTML += 'by census tract<br />';
+    div.innerHTML += '<br>';
+    div.innerHTML += '<i style="background: #c9ff00"></i><p>15+</p>';
+    div.innerHTML += '<i style="background: #49ff00"></i><p>10-15</p>';
+    div.innerHTML += '<i style="background: #00ffec"></i><p>5-10</p>';
+    div.innerHTML += '<i style="background: #FFF8DC"></i><p>0-5</p>';
+    div.innerHTML += '<hr>';
+    div.innerHTML += '<i style="background: #110022"></i><p>No_Data</p>';
+    
+    // Return the Legend div containing the HTML content
+    return div;
+};
+
+// Add Legend to Map
+legend.addTo(map);
 		
 		// Add Scale Bar to Map
 		L.control.scale({position: 'bottomleft'}).addTo(map);
