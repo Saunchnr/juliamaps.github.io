@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+
+
+
+
+<html>
+<head>
+    
+
+    
+    
+    <meta charset=utf-8 />
+    <title>New Brunswick Building Footprints  by Year</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
+  integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+  crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"
+  integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og=="
+  crossorigin=""></script>
+
+
+  <!-- Load Esri Leaflet from CDN -->
+  <script src="https://unpkg.com/esri-leaflet@2.3.2/dist/esri-leaflet.js"
+  integrity="sha512-6LVib9wGnqVKIClCduEwsCub7iauLXpwrd5njR2J507m3A2a4HXJDLMiSZzjcksag3UluIfuW1KzuWVI5n/cuQ=="
+  crossorigin=""></script>
+
+
+     <script src="https://unpkg.com/esri-leaflet-geocoder@2.2.6"></script>
+     <script src='https://code.jquery.com/jquery-2.2.4.min.js'></script>
+<script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js'></script>
+<script src='https://unpkg.com/leaflet@1.2.0/dist/leaflet.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/esri-leaflet/2.1.1/esri-leaflet.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/esri-leaflet-geocoder/2.2.6/esri-leaflet-geocoder.js'></script>
+
+     <link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
+
+     <link rel='stylesheet prefetch' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'>
+<link rel='stylesheet prefetch' href='https://unpkg.com/leaflet@1.2.0/dist/leaflet.css'>
+<link rel='stylesheet prefetch' href='https://cdnjs.cloudflare.com/ajax/libs/esri-leaflet-geocoder/2.2.6/esri-leaflet-geocoder.css'>
+
+      <link rel="stylesheet" href="css/style.css">
+
+   
+
+    
+  <style>
+      
+      body { margin:0; padding:0; }
+      
+    #map { position: absolute; top:0; bottom:0; right:0; left:0; }
+
+    #info-pane {
+    position: absolute;
+    top: 150px;
+    right: 10px;
+    z-index: 400;
+    padding: 1em;
+    background: white;
+    box-shadow: 0 0 15px rgba(0,0,0,0.2); 
+    font-size: 15px;
+  }
+
+  #selectedFeatures {
+    position: absolute;
+    top: 140px;
+    left: 200px;
+    z-index: 400;
+    padding: 10em;
+    background: white;
+    font-size: 16px;
+  }
+
+      
+    html { height:100%;}
+    body {
+        height:100%;
+        padding: 0;
+        margin: 0;
+    }
+      
+    .legend {
+    line-height: 30px;
+    color: #F0F0F0;
+    font-family: 'Open Sans', Helvetica, sans-serif;
+    padding: 15px 15px;
+    background: #505050;
+    box-shadow: 0 0 15px rgba(0,0,0,0.8);
+    border-radius: 15px;
+}
+
+   .legend i {
+    width: 10px;
+    height: 10px;
+    float: left; 
+    margin-right: 8px;
+    opacity: 0.9;
+}
+
+
+    .legend p {
+    font-size: 12px;
+    line-height: 15px;
+    margin: 0;
+}
+      
+    </style>
+    
+</head>
+
+</head>
+
+<body>
+   </div>
+</div>
+<div id="map"></div>
+
+
+
+<div id="info-pane" class="leaflet-bar"></div>
+
+
+
+
+
+     <script>
+         
+var gray = L.layerGroup();
+         
+          L.esri.basemapLayer('DarkGray').addTo(gray);
+  L.esri.basemapLayer('GrayLabels').addTo(gray);
+
+  
+         
+         
+         
+         var states = L.esri.featureLayer({
+    url: 'https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/NewBrunswickBuildingFootprints/FeatureServer/0',
+   
+  });        
+         
+         
+         states.bindPopup(function (layer) {
+    return L.Util.template('<p><strong>{Building}</strong></p>', layer.feature.properties);
+  }); 
+         
+  // Create Map object
+         
+            
+         
+         
+         
+         
+         
+         var map = L.map('map', {
+    center: [40.490472, -74.448071],
+    zoom: 15,
+    layers: [gray, states]
+  });
+         
+
+
+         
+         
+  L.esri.basemapLayer('DarkGray').addTo(map);
+         
+   
+         
+      var baseLayers = {
+    Grayscale: gray,
+    Topo: L.esri.basemapLayer('Topographic')
+  };
+
+  var overlays = {
+    'Historic Buildings': states
+  };
+
+  // https://leafletjs.com/reference.html#control-layers
+  L.control.layers(baseLayers, overlays).addTo(map);   
+         
+
+        
+         
+         
+// Add Open Street Map as the basemap
+
+
+/*** Logic related to Esri Leaflet Geocoder Plugin ***/
+// the search widget that will be hooked into the leaflet map
+var searchControl;
+
+// a layer group containing the results of a query against a geocoding service and/or feature layer (map/feature service)
+var searchResults = L.layerGroup().addTo(map);
+
+// the coordinate bounding box in which we will search for addresses/features
+// this prevents from searching addresses in Europe if you're only interested in the United States, for example
+
+
+//);
+
+var searchBounds = L.latLngBounds(
+ 
+  [40.519044, -74.451598],
+  [40.460792, -74.447956]
+);
+
+// Providers - the geocoding services and map/feature services that users can search against
+// ArcGIS Online default geocoding service
+var agolProvider = L.esri.Geocoding.arcgisOnlineProvider({
+  // results from this provider will be listed under the label property
+  label: "Address Search",
+  // limit the number of results from this provider
+  maxResults: 6
+});
+
+// Cumberland County Road Centerlines
+// suggestions must be enabled on a custom gecoding service for matching results to show up in search control
+// suggestions are not enabled for this service
+
+
+var placeLayer = L.esri.Geocoding.featureLayerProvider({
+  // url for the map/feature service
+  url: "https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/MidcoPlaces/FeatureServer/0",
+  // limit which fields can be queried against
+  searchFields: ["PO_NAME", "ZIP", "STATE"],
+  // define a function for how the matching features will be displayed in the results list
+  formatSuggestion: function(feature) {
+    return (
+      feature.properties.PO_NAME +
+      ", " +
+      feature.properties.ZIP +
+      ", " +
+      feature.properties.STATE
+    );
+  },
+  label: "Place" 
+});
+
+
+
+
+
+// instantiate the search control and add to the map
+searchControl = L.esri.Geocoding
+  .geosearch({
+    useMapBounds: false, // do not use extent of map to limit search results
+    providers: [agolProvider, placeLayer], // providers are geocoding services or map/feature services that we can search against
+    placeholder: "Search for an address",
+    title: "Address Search",
+    searchBounds: searchBounds, // limit search results within these coordinates
+    zoomToResult: true,
+    expanded: true,
+    collapseAfterResult: false
+  })
+  .addTo(map);
+
+// Results event - what happens when a user searches against a provider
+searchControl.on("results", function(data) {
+  // remove existing results from map
+  searchResults.clearLayers();
+
+  // test whether there are any results
+  if (data.results.length > 0) {
+    // set map view to coordinates of the first item in the results and the zoom level to 18
+    map.setView(data.results[0].latlng, 18);
+
+     // create a popup at the coordinates of the result and add the result text to the popup and open it on the map
+    var popup = L.popup({ closeOnClick: true })
+      .setLatLng(data.results[0].latlng)
+      .setContent(data.results[0].text)
+      .openOn(map);
+  }
+});
+         
+         var bf1700 = L.esri.featureLayer({
+    url: 'https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/newbrunswickbuildingfootprintsdecade/FeatureServer/22',
+    simplifyFactor: 0.35,
+    precision: 5,
+    fields: [  'OBJECTID_12', 'YearBuilt'],
+    style: {
+
+      color: '#2892C7',
+      weight: 1.5
+    }
+  }).addTo(map);
+
+  var bf1700id;
+
+  bf1700.on('mouseout', function(e){
+    document.getElementById('info-pane').innerHTML = 'Hover for Year Built';
+    bf1700.resetFeatureStyle(bf1700id);
+  });
+
+  bf1700.on('mouseover', function(e){
+    bf1700id = e.layer.feature.id;
+    document.getElementById('info-pane').innerHTML = e.layer.feature.properties.YearBuilt;
+    bf1700.setFeatureStyle(e.layer.feature.id, {
+      color: '#ffffff',
+      weight: 3,
+      opacity: 3
+    });
+  });
+         
+         
+         
+         
+         
+         //1770
+         
+         var bf1770 = L.esri.featureLayer({
+    url: 'https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/newbrunswickbuildingfootprintsdecade/FeatureServer/21',
+    simplifyFactor: 0.35,
+    precision: 5,
+    fields: [  'OBJECTID_12', 'YearBuilt'],
+    style: {
+
+      color: '#4398BF',
+      weight: 1.5
+    }
+  }).addTo(map);
+
+  var bf1770id;
+
+  bf1770.on('mouseout', function(e){
+    document.getElementById('info-pane').innerHTML = 'Hover for Year Built';
+    bf1770.resetFeatureStyle(bf1770id);
+  });
+
+  bf1770.on('mouseover', function(e){
+    bf1770id = e.layer.feature.id;
+    document.getElementById('info-pane').innerHTML = e.layer.feature.properties.YearBuilt;
+    bf1770.setFeatureStyle(e.layer.feature.id, {
+      color: '#ffffff',
+      weight: 3,
+      opacity: 3
+    });
+  });
+         
+         
+         
+         
+         //1780
+         
+         
+         var bf1780 = L.esri.featureLayer({
+    url: 'https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/newbrunswickbuildingfootprintsdecade/FeatureServer/20',
+    simplifyFactor: 0.35,
+    precision: 5,
+    fields: [  'OBJECTID_12', 'YearBuilt'],
+    style: {
+
+      color: '#59A2BA',
+      weight: 1.5
+    }
+  }).addTo(map);
+
+  var bf1780id;
+
+  bf1780.on('mouseout', function(e){
+    document.getElementById('info-pane').innerHTML = 'Hover for Year Built';
+    bf1780.resetFeatureStyle(bf1780id);
+  });
+
+  bf1780.on('mouseover', function(e){
+    bf1780id = e.layer.feature.id;
+    document.getElementById('info-pane').innerHTML = e.layer.feature.properties.YearBuilt;
+    bf1780.setFeatureStyle(e.layer.feature.id, {
+      color: '#ffffff',
+      weight: 3,
+      opacity: 3
+    });
+  });
+         
+         
+         
+         
+         
+         //1800
+         
+         var bf1800 = L.esri.featureLayer({
+    url: 'https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/newbrunswickbuildingfootprintsdecade/FeatureServer/19',
+    simplifyFactor: 0.35,
+    precision: 5,
+    fields: [  'OBJECTID_12', 'YearBuilt'],
+    style: {
+
+      color: '#6DA9B3',
+      weight: 1.5
+    }
+  }).addTo(map);
+
+  var bf1800id;
+
+  bf1800.on('mouseout', function(e){
+    document.getElementById('info-pane').innerHTML = 'Hover for Year Built';
+    bf1800.resetFeatureStyle(bf1800id);
+  });
+
+  bf1800.on('mouseover', function(e){
+    bf1800id = e.layer.feature.id;
+    document.getElementById('info-pane').innerHTML = e.layer.feature.properties.YearBuilt;
+    bf1800.setFeatureStyle(e.layer.feature.id, {
+      color: '#ffffff',
+      weight: 3,
+      opacity: 3
+    });
+  });
+         
+         
+         
+         //1810
+         
+         var bf1810s = L.esri.featureLayer({
+    url: 'https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/newbrunswickbuildingfootprintsdecade/FeatureServer/18',
+    simplifyFactor: 0.35,
+    precision: 5,
+    fields: [  'OBJECTID_12', 'YearBuilt'],
+    style: {
+
+      color: '#81B3AB',
+      weight: 1.5
+    }
+  }).addTo(map);
+
+  var bf1810id;
+
+  bf1810s.on('mouseout', function(e){
+    document.getElementById('info-pane').innerHTML = 'Hover for Year Built';
+    bf1810s.resetFeatureStyle(bf1810id);
+  });
+
+  bf1810s.on('mouseover', function(e){
+    bf1810id = e.layer.feature.id;
+    document.getElementById('info-pane').innerHTML = e.layer.feature.properties.YearBuilt;
+    bf1810s.setFeatureStyle(e.layer.feature.id, {
+      color: '#ffffff',
+      weight: 3,
+      opacity: 3
+    });
+  });
+         
+         
+         
+         //1820
+         
+         var bf1820 = L.esri.featureLayer({
+    url: 'https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/newbrunswickbuildingfootprintsdecade/FeatureServer/17',
+    simplifyFactor: 0.35,
+    precision: 5,
+    fields: [  'OBJECTID_12', 'YearBuilt'],
+    style: {
+
+      color: '#8FBAA3',
+      weight: 1.5
+    }
+  }).addTo(map);
+
+  var bf1820id;
+
+  bf1820.on('mouseout', function(e){
+    document.getElementById('info-pane').innerHTML = 'Hover for Year Built';
+    bf1820.resetFeatureStyle(bf1820id);
+  });
+
+  bf1820.on('mouseover', function(e){
+    bf1820id = e.layer.feature.id;
+    document.getElementById('info-pane').innerHTML = e.layer.feature.properties.YearBuilt;
+    bf1820.setFeatureStyle(e.layer.feature.id, {
+      color: '#ffffff',
+      weight: 3,
+      opacity: 3
+    });
+  });
+         
+         
+         
+         //1830
+         
+         var bf1830 = L.esri.featureLayer({
+    url: 'https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/newbrunswickbuildingfootprintsdecade/FeatureServer/16',
+    simplifyFactor: 0.35,
+    precision: 5,
+    fields: [  'OBJECTID_12', 'YearBuilt'],
+    style: {
+
+      color: '#A0C29B',
+      weight: 1.5
+    }
+  }).addTo(map);
+
+  var bf1830id;
+
+  bf1830.on('mouseout', function(e){
+    document.getElementById('info-pane').innerHTML = 'Hover for Year Built';
+    bf1830.resetFeatureStyle(bf1830id);
+  });
+
+  bf1830.on('mouseover', function(e){
+    bf1830id = e.layer.feature.id;
+    document.getElementById('info-pane').innerHTML = e.layer.feature.properties.YearBuilt;
+    bf1830.setFeatureStyle(e.layer.feature.id, {
+      color: '#ffffff',
+      weight: 3,
+      opacity: 3
+    });
+  });
+         
+         
+         
+         
+         //1850
+         
+         var bf1850 = L.esri.featureLayer({
+    url: 'https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/newbrunswickbuildingfootprintsdecade/FeatureServer/15',
+    simplifyFactor: 0.35,
+    precision: 5,
+    fields: [  'OBJECTID_12', 'YearBuilt'],
+    style: {
+
+      color: '#BFD48A',
+      weight: 1.5
+    }
+  }).addTo(map);
+
+  var bf1850id;
+
+  bf1850.on('mouseout', function(e){
+    document.getElementById('info-pane').innerHTML = 'Hover for Year Built';
+    bf1850.resetFeatureStyle(bf1850id);
+  });
+
+  bf1850.on('mouseover', function(e){
+    bf1850id = e.layer.feature.id;
+    document.getElementById('info-pane').innerHTML = e.layer.feature.properties.YearBuilt;
+    bf1850.setFeatureStyle(e.layer.feature.id, {
+      color: '#ffffff',
+      weight: 3,
+      opacity: 3
+    });
+  });
+         
+         
+         
+         
+         //1860
+         
+         
+         var bf1860 = L.esri.featureLayer({
+    url: 'https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/newbrunswickbuildingfootprintsdecade/FeatureServer/14',
+    simplifyFactor: 0.35,
+    precision: 5,
+    fields: [  'OBJECTID_12', 'YearBuilt'],
+    style: {
+
+      color: '#CEDE81',
+      weight: 1.5
+    }
+  }).addTo(map);
+
+  var bf1860id;
+
+  bf1860.on('mouseout', function(e){
+    document.getElementById('info-pane').innerHTML = 'Hover for Year Built';
+    bf1860.resetFeatureStyle(bf1860id);
+  });
+
+  bf1860.on('mouseover', function(e){
+    bf1860id = e.layer.feature.id;
+    document.getElementById('info-pane').innerHTML = e.layer.feature.properties.YearBuilt;
+    bf1860.setFeatureStyle(e.layer.feature.id, {
+      color: '#ffffff',
+      weight: 3,
+      opacity: 3
+    });
+  });
+         
+         
+         
+         //1870
+         
+         var bf1870 = L.esri.featureLayer({
+    url: 'https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/newbrunswickbuildingfootprintsdecade/FeatureServer/13',
+    simplifyFactor: 0.35,
+    precision: 5,
+    fields: [  'OBJECTID_12', 'YearBuilt'],
+    style: {
+
+      color: '#DAE677',
+      weight: 1.5
+    }
+  }).addTo(map);
+
+  var bf1870id;
+
+  bf1870.on('mouseout', function(e){
+    document.getElementById('info-pane').innerHTML = 'Hover for Year Built';
+    bf1870.resetFeatureStyle(bf1870id);
+  });
+
+  bf1870.on('mouseover', function(e){
+    bf1870id = e.layer.feature.id;
+    document.getElementById('info-pane').innerHTML = e.layer.feature.properties.YearBuilt;
+    bf1870.setFeatureStyle(e.layer.feature.id, {
+      color: '#ffffff',
+      weight: 3,
+      opacity: 3
+    });
+  });
+         
+         
+         //1880
+         
+         var bf1880 = L.esri.featureLayer({
+    url: 'https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/newbrunswickbuildingfootprintsdecade/FeatureServer/12',
+    simplifyFactor: 0.35,
+    precision: 5,
+    fields: [  'OBJECTID_12', 'YearBuilt'],
+    style: {
+
+      color: '#EBF06E',
+      weight: 1.5
+    }
+  }).addTo(map);
+
+  var bf1880id;
+
+  bf1880.on('mouseout', function(e){
+    document.getElementById('info-pane').innerHTML = 'Hover for Year Built';
+    bf1880.resetFeatureStyle(bf1880id);
+  });
+
+  bf1880.on('mouseover', function(e){
+    bf1880id = e.layer.feature.id;
+    document.getElementById('info-pane').innerHTML = e.layer.feature.properties.ZIP;
+    bf1880.setFeatureStyle(e.layer.feature.id, {
+      color: '#ffffff',
+      weight: 3,
+      opacity: 3
+    });
+  });
+         
+         
+         
+         //1890
+         
+         var bf1890 = L.esri.featureLayer({
+    url: 'https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/newbrunswickbuildingfootprintsdecade/FeatureServer/11',
+    simplifyFactor: 0.35,
+    precision: 5,
+    fields: [  'OBJECTID_12', 'YearBuilt'],
+    style: {
+
+      color: '#FAFA64',
+      weight: 1.5
+    }
+  }).addTo(map);
+
+  var bf1890id;
+
+  bf1890.on('mouseout', function(e){
+    document.getElementById('info-pane').innerHTML = 'Hover for Year Built';
+    bf1890.resetFeatureStyle(bf1890id);
+  });
+
+  bf1890.on('mouseover', function(e){
+    bf1890id = e.layer.feature.id;
+    document.getElementById('info-pane').innerHTML = e.layer.feature.properties.YearBuilt;
+    bf1890.setFeatureStyle(e.layer.feature.id, {
+      color: '#ffffff',
+      weight: 3,
+      opacity: 3
+    });
+  });
+         
+         
+         //1900
+         
+         var bf1900 = L.esri.featureLayer({
+    url: 'https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/newbrunswickbuildingfootprintsdecade/FeatureServer/10',
+    simplifyFactor: 0.35,
+    precision: 5,
+    fields: [  'OBJECTID_12', 'YearBuilt'],
+    style: {
+
+      color: '#FCE95D',
+      weight: 1.5
+    }
+  }).addTo(map);
+
+  var bf1900id;
+
+  bf1900.on('mouseout', function(e){
+    document.getElementById('info-pane').innerHTML = 'Hover for Year Built';
+    bf1900.resetFeatureStyle(bf1900id);
+  });
+
+  bf1900.on('mouseover', function(e){
+    bf1900id = e.layer.feature.id;
+    document.getElementById('info-pane').innerHTML = e.layer.feature.properties.YearBuilt;
+    bf1900.setFeatureStyle(e.layer.feature.id, {
+      color: '#ffffff',
+      weight: 3,
+      opacity: 3
+    });
+  });
+         
+         
+         
+         //1910
+         
+         var bf1910 = L.esri.featureLayer({
+    url: 'https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/newbrunswickbuildingfootprintsdecade/FeatureServer/9',
+    simplifyFactor: 0.35,
+    precision: 5,
+    fields: [  'OBJECTID_12', 'YearBuilt'],
+    style: {
+
+      color: '#FCD553',
+      weight: 1.5
+    }
+  }).addTo(map);
+
+  var bf1910id;
+
+  bf1910.on('mouseout', function(e){
+    document.getElementById('info-pane').innerHTML = 'Hover for Year Built';
+    bf1910.resetFeatureStyle(bf1910id);
+  });
+
+  bf1910.on('mouseover', function(e){
+    bf1910id = e.layer.feature.id;
+    document.getElementById('info-pane').innerHTML = e.layer.feature.properties.YearBuilt;
+    bf1910.setFeatureStyle(e.layer.feature.id, {
+      color: '#ffffff',
+      weight: 3,
+      opacity: 3
+    });
+  });
+         
+         
+         
+         
+         //1920
+         
+         var bf1920 = L.esri.featureLayer({
+    url: 'https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/newbrunswickbuildingfootprintsdecade/FeatureServer/8',
+    simplifyFactor: 0.35,
+    precision: 5,
+    fields: [  'OBJECTID_12', 'YearBuilt'],
+    style: {
+
+      color: '#FCC44C',
+      weight: 1.5
+    }
+  }).addTo(map);
+
+  var bf1920id;
+
+  bf1920.on('mouseout', function(e){
+    document.getElementById('info-pane').innerHTML = 'Hover for Year Built';
+    bf1920.resetFeatureStyle(bf1920id);
+  });
+
+  bf1920.on('mouseover', function(e){
+    bf1920id = e.layer.feature.id;
+    document.getElementById('info-pane').innerHTML = e.layer.feature.properties.YearBuilt;
+    bf1920.setFeatureStyle(e.layer.feature.id, {
+      color: '#ffffff',
+      weight: 3,
+      opacity: 3
+    });
+  });
+         
+         
+         //1930
+         
+         
+         var bf1930 = L.esri.featureLayer({
+    url: 'https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/newbrunswickbuildingfootprintsdecade/FeatureServer/7',
+    simplifyFactor: 0.35,
+    precision: 5,
+    fields: [  'OBJECTID_12', 'YearBuilt'],
+    style: {
+
+      color: '#FCB344',
+      weight: 1.5
+    }
+  }).addTo(map);
+
+  var bf1930id;
+
+  bf1930.on('mouseout', function(e){
+    document.getElementById('info-pane').innerHTML = 'Hover for Year Built';
+    bf1930.resetFeatureStyle(bf1930id);
+  });
+
+  bf1930.on('mouseover', function(e){
+    bf1930id = e.layer.feature.id;
+    document.getElementById('info-pane').innerHTML = e.layer.feature.properties.YearBuilt;
+    bf1930.setFeatureStyle(e.layer.feature.id, {
+      color: '#ffffff',
+      weight: 3,
+      opacity: 3
+    });
+  });
+         
+         
+         
+         //1940
+         
+         var bf1940 = L.esri.featureLayer({
+    url: 'https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/newbrunswickbuildingfootprintsdecade/FeatureServer/6',
+    simplifyFactor: 0.35,
+    precision: 5,
+    fields: [  'OBJECTID_12', 'YearBuilt'],
+    style: {
+
+      color: '#FCA33D',
+      weight: 1.5
+    }
+  }).addTo(map);
+
+  var bf1940id;
+
+  bf1940.on('mouseout', function(e){
+    document.getElementById('info-pane').innerHTML = 'Hover for Year Built';
+    bf1940.resetFeatureStyle(bf1940id);
+  });
+
+  bf1940.on('mouseover', function(e){
+    bf1940id = e.layer.feature.id;
+    document.getElementById('info-pane').innerHTML = e.layer.feature.properties.YearBuilt;
+    bf1940.setFeatureStyle(e.layer.feature.id, {
+      color: '#ffffff',
+      weight: 3,
+      opacity: 3
+    });
+  });
+         
+         
+         
+         
+         //1950
+         
+         
+         var bf1950 = L.esri.featureLayer({
+    url: 'https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/newbrunswickbuildingfootprintsdecade/FeatureServer/5',
+    simplifyFactor: 0.35,
+    precision: 5,
+    fields: [  'OBJECTID_12', 'YearBuilt'],
+    style: {
+
+      color: '#FA8D34',
+      weight: 1.5
+    }
+  }).addTo(map);
+
+  var bf1950id;
+
+  bf1950.on('mouseout', function(e){
+    document.getElementById('info-pane').innerHTML = 'Hover for Year Built';
+    bf1950.resetFeatureStyle(bf1950id);
+  });
+
+  bf1950.on('mouseover', function(e){
+    bf1950id = e.layer.feature.id;
+    document.getElementById('info-pane').innerHTML = e.layer.feature.properties.YearBuilt;
+    bf1950.setFeatureStyle(e.layer.feature.id, {
+      color: '#ffffff',
+      weight: 3,
+      opacity: 3
+    });
+  });
+         
+         
+         
+         //1960
+         
+     var bf1960 = L.esri.featureLayer({
+    url: 'https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/newbrunswickbuildingfootprintsdecade/FeatureServer/4',
+    simplifyFactor: 0.35,
+    precision: 5,
+    fields: [  'OBJECTID_12', 'YearBuilt'],
+    style: {
+
+      color: '#F77F2F',
+      weight: 1.5
+    }
+  }).addTo(map);
+
+  var bf1960id;
+
+  bf1960.on('mouseout', function(e){
+    document.getElementById('info-pane').innerHTML = 'Hover for Year Built';
+    bf1960.resetFeatureStyle(bf1960id);
+  });
+
+  bf1960.on('mouseover', function(e){
+    bf1960id = e.layer.feature.id;
+    document.getElementById('info-pane').innerHTML = e.layer.feature.properties.YearBuilt;
+    bf1960.setFeatureStyle(e.layer.feature.id, {
+      color: '#ffffff',
+      weight: 3,
+      opacity: 3
+    });
+  });
+         
+         
+         
+         
+         //1970
+         
+         
+         var bf1970 = L.esri.featureLayer({
+    url: 'https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/newbrunswickbuildingfootprintsdecade/FeatureServer/3',
+    simplifyFactor: 0.35,
+    precision: 5,
+    fields: [  'OBJECTID_12', 'YearBuilt'],
+    style: {
+
+      color: '#F76E2A',
+      weight: 1.5
+    }
+  }).addTo(map);
+
+  var bf1970id;
+
+  bf1970.on('mouseout', function(e){
+    document.getElementById('info-pane').innerHTML = 'Hover for Year Built';
+    bf1970.resetFeatureStyle(bf1970id);
+  });
+
+  bf1970.on('mouseover', function(e){
+    bf1970id = e.layer.feature.id;
+    document.getElementById('info-pane').innerHTML = e.layer.feature.properties.YearBuilt;
+    bf1970.setFeatureStyle(e.layer.feature.id, {
+      color: '#ffffff',
+      weight: 3,
+      opacity: 3
+    });
+  });
+         
+         
+         
+         //1980
+         
+         
+         var bf1980 = L.esri.featureLayer({
+    url: 'https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/newbrunswickbuildingfootprintsdecade/FeatureServer/2',
+    simplifyFactor: 0.35,
+    precision: 5,
+    fields: [  'OBJECTID_12', 'YearBuilt'],
+    style: {
+
+      color: '#F25922',
+      weight: 1.5
+    }
+  }).addTo(map);
+
+  var bf1980id;
+
+  bf1980.on('mouseout', function(e){
+    document.getElementById('info-pane').innerHTML = 'Hover for Year Built';
+    bf1980.resetFeatureStyle(bf1980id);
+  });
+
+  bf1980.on('mouseover', function(e){
+    bf1980id = e.layer.feature.id;
+    document.getElementById('info-pane').innerHTML = e.layer.feature.properties.YearBuilt;
+    bf1980.setFeatureStyle(e.layer.feature.id, {
+      color: '#ffffff',
+      weight: 3,
+      opacity: 3
+    });
+  });
+         
+         
+         
+         
+         //1990
+         
+        var bf1990 = L.esri.featureLayer({
+    url: 'https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/newbrunswickbuildingfootprintsdecade/FeatureServer/1',
+    simplifyFactor: 0.35,
+    precision: 5,
+    fields: [  'OBJECTID_12', 'YearBuilt',],
+    style: {
+
+      color: '#F0471D',
+      weight: 1.5
+    }
+  }).addTo(map);
+
+  var bf1990id;
+
+  bf1990.on('mouseout', function(e){
+    document.getElementById('info-pane').innerHTML = 'Hover for Year Built';
+    bf1990.resetFeatureStyle(bf1990id);
+  });
+
+  bf1990.on('mouseover', function(e){
+    bf1990id = e.layer.feature.id;
+    document.getElementById('info-pane').innerHTML = e.layer.feature.properties.YearBuilt;
+    bf1990.setFeatureStyle(e.layer.feature.id, {
+      color: '#ffffff',
+      weight: 3,
+      opacity: 3
+    });
+  }); 
+         
+         
+
+         //2000
+         
+         
+     var bf2000 = L.esri.featureLayer({
+    url: 'https://services.arcgis.com/BnY3izA2Kwu6jVHq/arcgis/rest/services/newbrunswickbuildingfootprintsdecade/FeatureServer/0',
+    simplifyFactor: 0.35,
+    precision: 5,
+    fields: [  'OBJECTID_12', 'YearBuilt'],
+    style: {
+
+      color: '#E81014',
+      weight: 1.5
+    }
+  }).addTo(map);
+
+  var bf2000id;
+
+  bf2000.on('mouseout', function(e){
+    document.getElementById('info-pane').innerHTML = 'Hover for Year Built';
+    bf2000.resetFeatureStyle(bf2000id);
+  });
+
+  bf2000.on('mouseover', function(e){
+    bf2000id = e.layer.feature.id;
+    document.getElementById('info-pane').innerHTML = e.layer.feature.properties.YearBuilt;
+    bf2000.setFeatureStyle(e.layer.feature.id, {
+      color: '#ffffff',
+      weight: 3,
+      opacity: 3
+    });
+  });     
+         
+         
+         
+         
+               
+
+     
+         
+         
+        
+
+
+        
+     
+      
+        
+ L.Control.Watermark = L.Control.extend({
+    onAdd: function(map) {
+      var img = L.DomUtil.create('img');
+      
+      img.src = 'https://middlesexcounty.maps.arcgis.com/sharing/rest/content/items/28b6a839ffcb4bd2939927a91e5b0571/data';
+      img.style.width = '200px';
+      
+      return img;
+    },
+    
+    onRemove: function(map) {
+      // Nothing to do here
+    }
+  });
+
+  L.control.watermark = function(opts) {
+    return new L.Control.Watermark(opts);
+  }
+  
+  L.control.watermark({ position: 'bottomright' }).addTo(map);
+
+var legend = L.control({position: 'bottomleft'});
+
+// Function that runs when legend is added to map
+legend.onAdd = function (map) {
+    // Create Div Element and Populate it with HTML
+    var div = L.DomUtil.create('div', 'legend');            
+    div.innerHTML += '<b>New Brunswick</b><br />';
+    div.innerHTML += '<b>Building Footprints</b><br />';
+    div.innerHTML += '<b>Decade Built</b><br />';
+    div.innerHTML += '<hr>';
+    
+    div.innerHTML += '<i style="background: #ED3118"></i><p>2000</p>';
+    div.innerHTML += '<i style="background: #F0471D></i><p>1990</p>';
+    div.innerHTML += '<i style="background: #F25922"></i><p>1980</p>';
+    div.innerHTML += '<i style="background: #F76E2A"></i><p>1970</p>';
+    div.innerHTML += '<i style="background: #F77F2F"></i><p>1960</p>';
+    
+    div.innerHTML += '<i style="background: #FA8D34"></i><p>1950</p>';
+    
+    div.innerHTML += '<i style="background: #FA8D34"></i><p>1940</p>';
+    div.innerHTML += '<i style="background: #FCB344"></i><p>1930</p>';
+    div.innerHTML += '<i style="background: #FCC44C"></i><p>1920</p>';
+    div.innerHTML += '<i style="background: #FCD553"></i><p>1910</p>';
+    div.innerHTML += '<i style="background: #FAFA64"></i><p>1900</p>';
+    div.innerHTML += '<i style="background: #FFF8DC"></i><p>1890</p>';
+    div.innerHTML += '<i style="background: #EBF06E"></i><p>1880</p>';
+    div.innerHTML += '<i style="background: #DAE677"></i><p>1870</p>';
+    div.innerHTML += '<i style="background: #CEDE81"></i><p>1860</p>';
+    div.innerHTML += '<i style="background: #BFD48A"></i><p>1850</p>';
+    div.innerHTML += '<i style="background: #B1CC93"></i><p>1840</p>';
+    div.innerHTML += '<i style="background: #A0C29B"></i><p>1830</p>';
+    div.innerHTML += '<i style="background: #8FBAA3"></i><p>1820</p>';
+    div.innerHTML += '<i style="background: #81B3AB"></i><p>1810</p>';
+    div.innerHTML += '<i style="background: #6DA9B3></i><p>1800</p>';
+    div.innerHTML += '<i style="background: #59A2BA"></i><p>1780</p>';
+    div.innerHTML += '<i style="background: #4398BF"></i><p>1770</p>';
+    div.innerHTML += '<i style="background: #2892C7"></i><p>1700</p>';
+    
+    
+    div.innerHTML += '<hr>';
+   
+    
+    // Return the Legend div containing the HTML content
+    return div;
+};
+
+         // Add Scale Bar to Map
+		L.control.scale({position: 'bottomright'}).addTo(map);
+         
+// Add Legend to Map
+legend.addTo(map);
+		
+		
+		
+
+  </script>
+
+
+
+</body>
+</html>
+
+
+  </script>
+
+
+
+</body>
+</html>
